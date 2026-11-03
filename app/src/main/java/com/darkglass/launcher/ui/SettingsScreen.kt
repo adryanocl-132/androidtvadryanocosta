@@ -38,6 +38,10 @@ fun SettingsScreen(
     settings: UserSettings,
     slots: List<ResolvedSlot>,
     homeCandidateEnabled: Boolean,
+    autostartEnabled: Boolean,
+    canShowOnStartup: Boolean,
+    onToggleAutostart: (Boolean) -> Unit,
+    onGrantStartupPermission: () -> Unit,
     onChange: ((UserSettings) -> UserSettings) -> Unit,
     onAssociate: (slotId: String) -> Unit,
     onToggleHomeCandidate: (Boolean) -> Unit,
@@ -125,6 +129,25 @@ fun SettingsScreen(
                     Spacer(Modifier.width(8.dp))
                     GlassButton("Associar", animate) { onAssociate(s.slot.id) }
                 }
+            }
+
+            Section("Ao ligar a TV")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GlassButton("Abrir o Dark Glass", animate, selected = autostartEnabled) { onToggleAutostart(true) }
+                GlassButton("Não abrir", animate, selected = !autostartEnabled) { onToggleAutostart(false) }
+            }
+            Spacer(Modifier.height(10.dp))
+            if (canShowOnStartup) {
+                DText("Permissão concedida: o Dark Glass abre sozinho quando a TV liga.", 13.sp, color = DG.Secondary)
+            } else {
+                DText(
+                    "Falta a permissão \"Sobrepor a outros apps\". Sem ela o Android bloqueia a abertura automática. " +
+                        "Conceda pelo botão abaixo ou, pelo Mac: adb shell appops set com.darkglass.launcher SYSTEM_ALERT_WINDOW allow",
+                    13.sp,
+                    color = DG.Secondary,
+                )
+                Spacer(Modifier.height(10.dp))
+                GlassButton("Conceder permissão", animate, onClick = onGrantStartupPermission)
             }
 
             Section("Tela inicial")

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -99,5 +100,27 @@ class AppRepository(private val context: Context) {
             else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
             PackageManager.DONT_KILL_APP,
         )
+    }
+
+    // ---- Abrir ao ligar a TV ----
+
+    fun isAutostartEnabled(): Boolean = autostartEnabled(context)
+
+    fun setAutostartEnabled(enabled: Boolean) {
+        context.getSharedPreferences(BOOT_PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_AUTOSTART, enabled).apply()
+    }
+
+    fun canShowOverStartup(): Boolean = Settings.canDrawOverlays(context)
+
+    fun openOverlayPermissionScreen(): Boolean = start(
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")),
+    )
+
+    companion object {
+        const val BOOT_PREFS = "darkglass_boot"
+        const val KEY_AUTOSTART = "autostart"
+        fun autostartEnabled(context: Context): Boolean =
+            context.getSharedPreferences(BOOT_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_AUTOSTART, true)
     }
 }

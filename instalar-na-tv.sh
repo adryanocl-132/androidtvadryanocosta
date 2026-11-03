@@ -63,6 +63,8 @@ read -r -p "É a TV correta? Instalar o Dark Glass nela? [s/N] " ok
 
 # 5) Instalar/atualizar e abrir
 adb -s "$CONN" install -r "$APK"
+# Permite abrir ao ligar a TV (reversível: ... SYSTEM_ALERT_WINDOW default)
+adb -s "$CONN" shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || echo "AVISO: não foi possível liberar a abertura automática."
 adb -s "$CONN" shell am start -n "$PKG/.MainActivity"
 echo
 echo "Instalado. Versão: $(adb -s "$CONN" shell dumpsys package $PKG | grep -m1 versionName | tr -d ' ')"

@@ -97,9 +97,14 @@ private fun DarkGlassApp(
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var focusedIndex by remember { mutableIntStateOf(0) }
     var homeCandidate by remember { mutableStateOf(repo.isHomeCandidateEnabled()) }
+    var autostart by remember { mutableStateOf(repo.isAutostartEnabled()) }
+    var canOverlay by remember { mutableStateOf(repo.canShowOverStartup()) }
     val arts = remember { mutableStateMapOf<String, AppArt>() }
 
-    LaunchedEffect(resumeTick) { installed = repo.installedApps() }
+    LaunchedEffect(resumeTick) {
+        canOverlay = repo.canShowOverStartup()
+        installed = repo.installedApps()
+    }
     LaunchedEffect(homePressTick) { if (homePressTick > 0) screen = Screen.Home }
 
     val settings = loaded
@@ -142,6 +147,17 @@ private fun DarkGlassApp(
                 settings = settings,
                 slots = slots,
                 homeCandidateEnabled = homeCandidate,
+                autostartEnabled = autostart,
+                canShowOnStartup = canOverlay,
+                onToggleAutostart = { enabled ->
+                    repo.setAutostartEnabled(enabled)
+                    autostart = repo.isAutostartEnabled()
+                },
+                onGrantStartupPermission = {
+                    if (!repo.openOverlayPermissionScreen()) {
+                        toast("Esta TV não tem essa tela. Conceda pelo Mac com o comando mostrado.")
+                    }
+                },
                 onChange = ::change,
                 onAssociate = { id -> screen = Screen.Picker(id, Screen.Settings) },
                 onToggleHomeCandidate = { enabled ->
