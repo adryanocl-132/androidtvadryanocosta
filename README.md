@@ -15,6 +15,7 @@ app/src/main/java/com/darkglass/launcher/
   ui/SettingsScreen.kt     ajustes + seletor de app para associar atalhos
 app/src/test/...           testes unitários JVM
 .github/workflows/build.yml  compilação, testes, lint, verificação de assinatura, release
+instalar-na-tv.sh          instalação Mac → TV por ADB sem fio
 ```
 
 Decisões técnicas
@@ -36,30 +37,37 @@ https://github.com/<usuario>/<repositorio>/releases/latest/download/DarkGlass.ap
 
 O repositório precisa ser **público** para a TV baixar sem login. O hash SHA-256 de cada APK fica na release (`DarkGlass.apk.sha256`).
 
-## 2. Instalar só com iPhone/iPad + TV (caminho recomendado)
+## 2. Instalar do Mac para a TV (ADB sem fio)
 
-Sem computador na rede, a instalação é **manual pela própria TV** (download HTTPS + instalador do Android) — não é ADB.
+Requisitos: Mac e TV **no mesmo Wi-Fi**; na TV, Opções do desenvolvedor → **Depuração sem fio** ligada.
 
-1. Na TV: Google Play → instale **Downloader** (AFTVnews).
-2. Abra o Downloader e digite o link da release acima. Para digitar mais fácil, use o teclado do app Google TV no iPhone, se a sua TCL aceitar esse controle.
-3. Ao terminar o download, toque **Instalar**. Na primeira vez a TV pede para permitir "instalar apps desconhecidos" **para o Downloader** — permita só para ele.
-4. Abra **Dark Glass** pela lista de apps da TV.
-5. Depois de instalar, apague o APK baixado quando o Downloader perguntar.
-
-Atualizar: repita o passo 2 (mesma assinatura, instala por cima).
-
-### Alternativa ADB pelo iPhone
-Existe ao menos um cliente ADB para iOS na App Store (Bugjaeger – Mobile ADB), mas **não confirmei** que ele faz pareamento por código e instalação de APK na versão atual. Só use se a descrição da App Store confirmar as duas coisas. Fluxo, se confirmar:
-TV → Configurações → Opções do desenvolvedor → Depuração sem fio → **Parear dispositivo com código** → digite IP:porta de pareamento e o código **no app do iPhone** (o código não deve ser enviado a ninguém) → conecte na porta de conexão (diferente da de pareamento) → instale o APK.
-
-### Com um computador na mesma rede Wi-Fi
+```bash
+cd DarkGlass
+./instalar-na-tv.sh https://github.com/<usuario>/<repositorio>/releases/latest/download/DarkGlass.apk
+# ou um APK já baixado:  ./instalar-na-tv.sh ~/Downloads/DarkGlass.apk
 ```
-adb pair IP_DA_TV:PORTA_DE_PAREAMENTO      # código digitado localmente
+
+O script faz, pedindo confirmação nos pontos sensíveis:
+1. Instala o `adb` via Homebrew se faltar (pergunta antes).
+2. Baixa o APK por HTTPS e confere o SHA-256 com o da release.
+3. **Pareamento** (só na primeira vez): na TV, *Parear dispositivo com código*; digite no Mac o IP:porta de pareamento e o código de 6 dígitos. O código fica só no terminal.
+4. **Conexão**: IP:porta exibido na tela *Depuração sem fio* (é diferente da porta de pareamento).
+5. Mostra fabricante/modelo/Android da TV e só instala depois do seu "s".
+6. `adb install -r` e abre o Dark Glass.
+
+Atualizar: rode o script de novo com o link da release (a assinatura é a mesma, instala por cima).
+Nada é exposto à internet: o ADB fica na rede local e a TV desliga a depuração sem fio quando você quiser.
+
+Manual, sem script:
+```
+adb pair IP_DA_TV:PORTA_DE_PAREAMENTO
 adb connect IP_DA_TV:PORTA_DE_CONEXAO
 adb install -r DarkGlass.apk
 adb shell am start -n com.darkglass.launcher/.MainActivity
 ```
-Antes de instalar, confira o hash: `shasum -a 256 DarkGlass.apk` deve bater com o `.sha256` da release.
+
+### Alternativa sem o Mac
+Downloader (Google Play da TV) → link da release → Instalar (permitir "apps desconhecidos" só para o Downloader).
 
 ## 3. Usar como tela inicial (opcional, só depois de testar)
 
