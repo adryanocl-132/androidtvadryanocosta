@@ -1,0 +1,9 @@
+<resources>
+    <color name="obsidian">#FF080B12</color>
+    <style name="Theme.DarkGlass" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/obsidian</item>
+        <item name="android:colorBackground">@color/obsidian</item>
+        <item name="android:navigationBarColor">@color/obsidian</item>
+        <item name="android:statusBarColor">@color/obsidian</item>
+    </style>
+</resources>

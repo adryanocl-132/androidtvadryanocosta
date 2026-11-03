@@ -1,0 +1,68 @@
+name: Build Dark Glass
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Testes unitários, lint e APK
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug assembleDebug
+
+      - name: Validar APK (assinatura, manifesto, integridade)
+        run: |
+          set -euo pipefail
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          mkdir -p out
+          cp app/build/outputs/apk/debug/app-debug.apk out/DarkGlass.apk
+          "$BT/apksigner" verify --verbose --print-certs out/DarkGlass.apk | tee out/assinatura.txt
+          "$BT/aapt2" dump badging out/DarkGlass.apk | tee out/manifesto.txt
+          grep -q "package: name='com.darkglass.launcher'" out/manifesto.txt
+          grep -q "leanback-launchable-activity" out/manifesto.txt || echo "AVISO: entrada Leanback não listada pelo aapt2"
+          sha256sum out/DarkGlass.apk | tee out/DarkGlass.apk.sha256
+          {
+            echo "## Dark Glass — build ${GITHUB_RUN_NUMBER}"
+            echo '```'
+            grep -E "^(package|sdkVersion|targetSdkVersion|leanback|launchable)" out/manifesto.txt || true
+            cat out/DarkGlass.apk.sha256
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar APK e relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DarkGlass-build-${{ github.run_number }}
+          path: |
+            out/
+            app/build/reports/
+            app/build/test-results/
+
+      - name: Publicar release (link HTTPS fixo para a TV)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Dark Glass build ${{ github.run_number }}
+          make_latest: true
+          files: |
+            out/DarkGlass.apk
+            out/DarkGlass.apk.sha256
+            out/assinatura.txt
